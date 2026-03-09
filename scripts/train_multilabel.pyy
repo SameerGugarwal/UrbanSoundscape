@@ -1,0 +1,42 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+
+X = pd.read_csv("../datasets/processed/mfcc_features.csv")
+X = X.drop(columns=["audio_filename"])
+
+y = pd.read_csv("../datasets/raw/SONYC-UST/annotations.csv")
+
+label_cols = [c for c in y.columns if c.endswith("_presence")]
+y = y[label_cols]
+
+min_len = min(len(X), len(y))
+X = X.iloc[:min_len]
+y = y.iloc[:min_len]
+
+print("X shape:", X.shape)
+print("Y shape:", y.shape)
+print("Starting training...")
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+model = MultiOutputClassifier(
+     RandomForestClassifier(
+        n_estimators=150,
+        max_depth=20,
+        n_jobs=-1,
+        verbose=1,
+	random_state=42
+	)
+)
+
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+print("Training finished!")
+print(classification_report(y_test, y_pred))
+
